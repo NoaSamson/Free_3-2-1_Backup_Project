@@ -141,3 +141,6 @@ Backups should be periodically tested using restore operations.
 ## Conclusion
 
 This project demonstrates a practical and reproducible implementation of a secure 3‑2‑1 backup strategy using open‑source tools, combining automation, encryption and offline storage for reliable data protection.
+ 
+ 
+*A portion of the text in this project was generated with the assistance of a large language model (ChatGPT) to facilitate faster content structuring and stylistic refinement. All examples, formulations, and guidelines were carefully reviewed and edited by the author.*
