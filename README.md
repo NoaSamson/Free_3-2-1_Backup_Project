@@ -1,140 +1,143 @@
-# 3-2-1 Backup sustav s Restic + Rclone (Windows)
+# 3-2-1 Backup System using Restic + Rclone (Windows)
 
-## Opis projekta
+## Project Overview
 
-Ovaj projekt demonstrira implementaciju **3-2-1 strategije sigurnosnih kopija** na Windows sustavu koristeći open‑source alate Restic i Rclone.
+This project demonstrates the implementation of a **3-2-1 backup strategy** on Windows using open‑source tools. The goal is to provide a reproducible, automated and secure backup solution capable of recovering data after accidental deletion, hardware failure or malware infection.
 
-Cilj projekta nije samo napraviti kopiju podataka, nego dokazati da je moguće:
+The system creates:
 
-* automatizirati backup
-* zaštititi podatke od ransomwarea i grešaka korisnika
-* provesti potpunu obnovu sustava (disaster recovery)
-
----
-
-## 3‑2‑1 pravilo
-
-3‑2‑1 strategija nalaže:
-
-* **3 kopije podataka** (original + 2 sigurnosne)
-* **2 različita medija** (lokalni disk + eksterni disk)
-* **1 off‑site kopija** (cloud)
-
-U ovom projektu:
-
-* Original: korisnički podaci na računalu
-* Lokalna kopija: eksterni hard disk
-* Off‑site kopija: Google Drive
+* a local offline backup on an external drive
+* an off‑site encrypted cloud backup
+* automated periodic execution
 
 ---
 
-## Arhitektura sustava
+## What is the 3-2-1 rule?
 
-Komponente:
+The 3‑2‑1 backup strategy requires:
 
-* Restic → backup i enkripcija podataka
-* Rclone → pristup Google Driveu
-* Windows Task Scheduler → automatizacija
+* **3 copies of data** (original + 2 backups)
+* **2 different storage media** (internal + external disk)
+* **1 off‑site copy** (cloud)
 
-Tijek:
+Implementation in this project:
 
-1. Restic šifrira podatke lokalno
-2. Kopija ide na eksterni disk
-3. Druga kopija ide u cloud preko Rclonea
-4. Disk se drži offline radi zaštite od ransomwarea
-
----
-
-## Tehnologije
-
-* Restic – deduplicirani i enkriptirani backup
-* Rclone – povezivanje s cloud storageom
-* Google Drive – off‑site kopija
-* Windows Task Scheduler – periodično pokretanje skripti
-* PowerShell – automatizacija
+* Original data → user files on PC
+* Local backup → external hard drive
+* Off‑site backup → Google Drive
 
 ---
 
-## Postavljanje sustava
+## Technologies Used
 
-### 1. Inicijalizacija repozitorija
+* **Restic** – encrypted, deduplicated backups
+* **Rclone** – cloud storage interface (Google Drive)
+* **Windows Task Scheduler** – automation
+* **PowerShell** – scripting
 
-Lokalni disk:
+All tools are free and open‑source.
+
+---
+
+## System Architecture
+
+1. Restic encrypts files locally before leaving the computer
+2. Backup is written to an external drive
+3. A second backup is uploaded to Google Drive via Rclone
+4. The external drive is normally kept disconnected for ransomware protection
+
+---
+
+## Setup Guide
+
+### 1. Configure Rclone (Google Drive)
+
+```
+rclone config
+```
+
+Create a new remote and authenticate in browser.
+
+### 2. Initialize repositories
+
+External drive:
 
 ```
 restic init --repo E:\restic-backup
 ```
 
-Cloud:
+Cloud repository:
 
 ```
 restic -r rclone:gdrive:restic-backup init
 ```
 
-### 2. Automatski backup
+### 3. Password file (recommended)
 
-Pokretanje skripte putem Task Scheduler‑a jednom dnevno.
-
-Skripta:
-
-* provjerava postoji li eksterni disk
-* radi lokalni backup ako je dostupan
-* uvijek radi cloud backup
-* briše stare verzije (retention policy)
+```
+echo strongpassword > C:\Users\USER\.restic-password
+```
 
 ---
 
-## Sigurnosne mjere
+## Backup Script (PowerShell)
 
-* End‑to‑end enkripcija (Restic)
-* Disk offline kada se ne koristi
-* Lozinka spremljena u zaštićenom password fileu
-* Google račun zaštićen 2FA autentifikacijom
-* Periodični `restic check`
+The script performs:
 
-Zašto offline disk?
-Ransomware šifrira sve dostupne diskove. Offline kopija ostaje netaknuta.
+* detection of external drive
+* local backup if present
+* cloud backup always
+* retention policy cleanup
 
----
-
-## Disaster recovery scenariji
-
-### 1. Obrisan dokument
-
-* pronaći snapshot
-* vratiti datoteku pomoću restic restore
-
-### 2. Pokvaren disk računala
-
-* reinstall Windows
-* instalirati restic + rclone
-* restore iz clouda
-
-### 3. Ransomware
-
-* format diska
-* restore zadnje zdrave verzije
+The script is executed by Task Scheduler.
 
 ---
 
-## Testiranje
+## Automation with Windows Task Scheduler
 
-Projekt uključuje testne scenarije:
+Create a scheduled task:
 
-* vraćanje jedne datoteke
-* vraćanje cijelog direktorija
-* potpuni oporavak sustava
+**Triggers**
 
-Backup koji nije testiran ne smatra se pouzdanim.
+* Daily (e.g. 02:00)
+* At log on
+* Run task as soon as possible after a missed start
+
+**Action**
+
+```
+powershell -ExecutionPolicy Bypass -File C:\scripts\backup.ps1
+```
+
+This ensures:
+
+* backup runs even if the PC was off at night
+* automatic execution without user interaction
+* external disk backup runs whenever the disk is connected
 
 ---
 
-## Zaključak
+## Security Considerations
 
-Projekt pokazuje kako kombinacija lokalne i cloud kopije omogućuje:
+* End‑to‑end encryption before upload
+* Offline external disk protects against ransomware
+* Password stored in restricted file permissions
+* Cloud account protected with 2FA
 
-* zaštitu od hardverskog kvara
-* zaštitu od slučajnog brisanja
-* zaštitu od malwarea
+---
 
-3‑2‑1 backup strategija predstavlja minimalni standard sigurnosti podataka u stvarnom sustavu.
+## Recovery Scenarios
+
+The system supports recovery of:
+
+* individual files
+* entire directories
+* full system after reinstall
+
+Backups should be periodically tested using restore operations.
+
+---
+
+## Conclusion
+
+This project demonstrates a practical and reproducible implementation of a secure 3‑2‑1 backup strategy using open‑source tools, combining automation, encryption and offline storage for reliable data protection.
